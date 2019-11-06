@@ -4,6 +4,7 @@ using System.Linq;
 
 using Foundation;
 using UIKit;
+using UserNotifications;
 
 namespace NotificationsDummy.iOS
 {
@@ -22,10 +23,55 @@ namespace NotificationsDummy.iOS
         //
         public override bool FinishedLaunching(UIApplication app, NSDictionary options)
         {
+            settingsForLocalNotifications();
+            settingsForRemoteNotifications();
+
             global::Xamarin.Forms.Forms.Init();
             LoadApplication(new App());
 
             return base.FinishedLaunching(app, options);
+        }
+
+        public override void RegisteredForRemoteNotifications(UIApplication application, NSData deviceToken)
+        {
+            byte[] dt = deviceToken.ToArray();
+            string newDeviceToken = Convert.ToBase64String(dt);
+        }
+
+        private void settingsForLocalNotifications()
+        {
+            UNUserNotificationCenter center = UNUserNotificationCenter.Current;
+            center.RequestAuthorization(UNAuthorizationOptions.Alert, (bool success, NSError error) => {
+                // Set the Delegate regardless of success; users can modify their notification
+                // preferences at any time in the Settings app.
+                center.Delegate = new NotificationCenterDelegate();
+            });
+        }
+        private void settingsForRemoteNotifications()
+        {
+            if (UIDevice.CurrentDevice.CheckSystemVersion(8, 0))
+            {
+                var pushSettings = UIUserNotificationSettings.GetSettingsForTypes(
+                       UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound,
+                       new NSSet());
+
+                UIApplication.SharedApplication.RegisterUserNotificationSettings(pushSettings);
+                UIApplication.SharedApplication.RegisterForRemoteNotifications();
+            }
+            else
+            {
+                UIRemoteNotificationType notificationTypes = UIRemoteNotificationType.Alert | UIRemoteNotificationType.Badge | UIRemoteNotificationType.Sound;
+                UIApplication.SharedApplication.RegisterForRemoteNotificationTypes(notificationTypes);
+            }
+        }
+    }
+
+    public class NotificationCenterDelegate : UNUserNotificationCenterDelegate
+    {
+        [Export("userNotificationCenter:willPresentotification:withCompletionHandler:")]
+        public override void WillPresentNotification(UNUserNotificationCenter center, UNNotification notification, System.Action<UNNotificationPresentationOptions> completionHandler)
+        {
+            completionHandler(UNNotificationPresentationOptions.Alert);
         }
     }
 }
