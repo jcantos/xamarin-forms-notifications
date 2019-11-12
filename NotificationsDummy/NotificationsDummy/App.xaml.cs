@@ -3,6 +3,7 @@ using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 using NotificationsDummy.Services;
 using NotificationsDummy.Views;
+using NotificationsDummy.Models;
 
 namespace NotificationsDummy
 {
@@ -15,6 +16,12 @@ namespace NotificationsDummy
 
             DependencyService.Register<MockDataStore>();
             MainPage = new MainPage();
+        }
+
+        public void OnPushNotification(Notification notification)
+        {
+            // TODO
+            // Manage the logic for each type of notification
         }
 
         protected override void OnStart()

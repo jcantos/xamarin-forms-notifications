@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Foundation;
+using NotificationsDummy.Models;
 using UIKit;
 using UserNotifications;
 
@@ -14,6 +15,8 @@ namespace NotificationsDummy.iOS
     [Register("AppDelegate")]
     public partial class AppDelegate : global::Xamarin.Forms.Platform.iOS.FormsApplicationDelegate
     {
+        private App crossApp;
+
         //
         // This method is invoked when the application has loaded and is ready to run. In this 
         // method you should instantiate the window, load the UI into it and then make the window
@@ -27,7 +30,8 @@ namespace NotificationsDummy.iOS
             settingsForRemoteNotifications();
 
             global::Xamarin.Forms.Forms.Init();
-            LoadApplication(new App());
+            crossApp = new App();
+            LoadApplication(crossApp);
 
             return base.FinishedLaunching(app, options);
         }
@@ -40,6 +44,52 @@ namespace NotificationsDummy.iOS
             // for push sharper format
             byte[] dt = deviceToken.ToArray();
             string dts = BitConverter.ToString(dt).Replace("-", "").ToUpperInvariant();
+
+            //TODO
+            //register deviceToken on backend
+        }
+
+        public override void OnActivated(UIApplication uiApplication)
+        {
+            UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
+            base.OnActivated(uiApplication);
+        }
+
+        public override void ReceivedRemoteNotification(UIApplication application, NSDictionary userInfo)
+        {
+            this.receivedPushNotification(userInfo, application);
+        }
+
+        public override void DidReceiveRemoteNotification(UIApplication application, NSDictionary userInfo, Action<UIBackgroundFetchResult> completionHandler)
+        {
+            this.receivedPushNotification(userInfo, application);
+        }
+
+        private void receivedPushNotification(NSDictionary userInfo, UIApplication application)
+        {
+            if (application.ApplicationState == UIApplicationState.Active)
+            {
+                return;
+            }
+
+            var aps = userInfo.ObjectForKey(new NSString("aps")) as NSDictionary;
+            if (aps != null)
+            {
+                string message = aps.ObjectForKey(new NSString("alert")) as NSString;
+                var parameters = aps.ObjectForKey(new NSString("parameters")) as NSDictionary;
+
+                NSError error;
+                var json = NSJsonSerialization.Serialize(parameters, NSJsonWritingOptions.PrettyPrinted, out error);
+                Newtonsoft.Json.Linq.JObject jObject = Newtonsoft.Json.Linq.JObject.Parse(json.ToString(NSStringEncoding.UTF8));
+
+                Notification _notification = new Notification()
+                {
+                    Message = message,
+                    Parameters = jObject
+                };
+
+                crossApp.OnPushNotification(_notification);
+            }
         }
 
         private void settingsForLocalNotifications()
