@@ -34,8 +34,12 @@ namespace NotificationsDummy.iOS
 
         public override void RegisteredForRemoteNotifications(UIApplication application, NSData deviceToken)
         {
+            //byte[] dt = deviceToken.ToArray();
+            //string newDeviceToken = Convert.ToBase64String(dt);
+
+            // for push sharper format
             byte[] dt = deviceToken.ToArray();
-            string newDeviceToken = Convert.ToBase64String(dt);
+            string dts = BitConverter.ToString(dt).Replace("-", "").ToUpperInvariant();
         }
 
         private void settingsForLocalNotifications()
