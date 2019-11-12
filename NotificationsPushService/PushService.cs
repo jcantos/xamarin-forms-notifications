@@ -23,8 +23,8 @@ namespace NotificationsPushService
 
         public PushService()
         {
-            IPushNotifications azureHubNotification = new PushSharperNotification();
-            this.pushNotification = azureHubNotification;
+            IPushNotifications hubNotification = new PushSharperNotification();
+            this.pushNotification = hubNotification;
         }
 
         public void SendNotification(string tag, string platform, string message, Dictionary<string, string> parameters)
